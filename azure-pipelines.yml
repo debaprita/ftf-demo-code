@@ -4,7 +4,6 @@
 
 trigger:
 - main
-- dockerize
 
 resources:
 - repo: self
@@ -17,8 +16,11 @@ variables:
   dockerfilePath: '**/Dockerfile'
   tag: '$(Build.SourceBranch)-$(Build.BuildId)-$(Build.SourceVersion)'
 
-  # Agent VM image name
-  vmImageName: 'ubuntu-latest'
+  # Self-Hosted Agent VM image name
+  pool:
+    name: 'self-ubuntu'
+    demands:
+    - Agent.OS -equals Linux
 
 stages: 
 - stage: Build
