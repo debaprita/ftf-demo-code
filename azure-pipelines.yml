@@ -67,5 +67,6 @@ stages:
             - task: Bash@3
               inputs:
                 targetType: 'inline'
-                script: '$(Agent.ToolsDirectory)/terraform/1.1.4/x64/terraform init'
+                script: 'az login;$(Agent.ToolsDirectory)/terraform/1.1.4/x64/terraform init; $(Agent.ToolsDirectory)/terraform/1.1.4/x64/terraform apply -auto-approve'
                 workingDirectory: '$(Agent.BuildDirectory)/drop/tf'
+            - bash: curl -X POST -H 'Content-type:"application/json"' --data '{"text":"Azure DevOps Build $(Build.BuildNumber) on $(Build.SourceBranch), $(Build.SourceVersion) completed succesfully executing the following steps - (1) Checkout , (2) Docker Build and Push , and (3) ACI Deploy - refer to pipeline run for details!"}' https://hooks.slack.com/services/$(slack-api)
