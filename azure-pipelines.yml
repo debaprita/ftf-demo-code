@@ -23,7 +23,7 @@ pool:
   - Agent.OS -equals Linux
 
 stages:
-- stage: Build
+- stage: Build App
   displayName: Build and push stage
   jobs:
   - job: Build
