@@ -3,40 +3,69 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/docker
 
 trigger:
-  - main
+- main
 
 resources:
-  - repo: self
+- repo: self
 
 variables:
   # Container registry service connection established during pipeline creation
-  dockerRegistryServiceConnection: "8980637f-1e4b-4923-9c70-cd7521f7e662"
-  imageRepository: "debapritaftfdemocode"
-  containerRegistry: "dftfex2acrde.azurecr.io"
-  dockerfilePath: "$(Build.SourcesDirectory)/demo/Dockerfile"
-  tag: "$(Build.SourceBranch)-$(Build.BuildId)-$(Build.SourceVersion)"
+  dockerRegistryServiceConnection: '3bc75ffa-6855-4ae6-94f0-e568ab29bf82'
+  imageRepository: 'ftfdemo'
+  containerRegistry: 'dftfex2acrde.azurecr.io'
+  dockerfilePath: '**/Dockerfile'
+  tag: '$(Build.BuildId)$(Build.SourceVersion)'
+  backendServiceArm: 'tf-sp-conn'
+  backendAzureRmResourceGroupName: 'deb-ftf-demo-tfstate-0'
+  backendAzureRmStorageAccountName: 'debftfdemotfstate0'
+  backendAzureRmContainerName: 'tfstate'
+  backendAzureRmKey: 'terraform.tfstate'
 
-  # Self hosted VM image name
-pool:
-  name: "self-ubuntu"
-  demands:
-    - Agent.OS -equals Linux
 
 stages:
-  - stage: Build
-    displayName: Build and push stage
-    jobs:
-      - job: Build
-        displayName: Build
-        pool:
-          vmImage: $(vmImageName)
-        steps:
-          - task: Docker@2
-            displayName: Build and push an image to container registry
-            inputs:
-              command: buildAndPush
-              repository: $(imageRepository)
-              dockerfile: $(dockerfilePath)
-              containerRegistry: $(dockerRegistryServiceConnection)
-              tags: |
-                $(tag)
+- stage: Build
+  displayName: Build and push stage
+  jobs:
+  - job: Build
+    displayName: Build
+    pool:
+      name: 'self-hosted'
+      demands:
+      - Agent.OS -equals Linux
+    steps:
+    - task: Docker@2
+      displayName: Build and push an image to container registry
+      inputs:
+        command: buildAndPush
+        repository: $(imageRepository)
+        dockerfile: $(dockerfilePath)
+        containerRegistry: $(dockerRegistryServiceConnection)
+        tags: |
+          $(tag)
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathToPublish: '$(Build.Repository.LocalPath)' 
+        artifactName: 'drop' 
+        publishLocation: 'Container'
+
+- stage: Deploy
+  displayName: Deploy to ACI
+  jobs:
+    - deployment: 
+      pool:
+        name: 'self-hosted'
+        demands:
+        - Agent.OS -equals Linux
+      environment: 'Dev'
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+            - task: TerraformInstaller@0
+              inputs:
+                terraformVersion: '1.1.4'
+            - task: Bash@3
+              inputs:
+                targetType: 'inline'
+                script: '$(Agent.ToolsDirectory)/terraform/1.1.4/x64/terraform init'
+                workingDirectory: '$(Agent.BuildDirectory)/drop/tf'
