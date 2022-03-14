@@ -14,7 +14,7 @@ variables:
   imageRepository: 'ftfdemo'
   containerRegistry: 'dftfex2acrde.azurecr.io'
   dockerfilePath: '**/Dockerfile'
-  tag: '$(Build.BuildId)$(Build.SourceVersion)'
+  tag: '$(Build.SourceVersion)'
   backendServiceArm: 'tf-sp-conn'
   backendAzureRmResourceGroupName: 'deb-ftf-demo-tfstate-0'
   backendAzureRmStorageAccountName: 'debftfdemotfstate0'
@@ -67,6 +67,6 @@ stages:
             - task: Bash@3
               inputs:
                 targetType: 'inline'
-                script: 'az login;$(Agent.ToolsDirectory)/terraform/1.1.4/x64/terraform init; $(Agent.ToolsDirectory)/terraform/1.1.4/x64/terraform apply -auto-approve'
+                script: 'az login;$(Agent.ToolsDirectory)/terraform/1.1.4/x64/terraform init; $(Agent.ToolsDirectory)/terraform/1.1.4/x64/terraform apply -auto-approve -var image_name=dftfex2acrde.azurecr.io/ftfdemo:$(Build.SourceVersion)'
                 workingDirectory: '$(Agent.BuildDirectory)/drop/tf/aci'
             - bash: curl -X POST -H 'Content-type:"application/json"' --data '{"text":"Azure DevOps Build $(Build.BuildNumber) on $(Build.SourceBranch), $(Build.SourceVersion) completed succesfully executing the following steps - (1) Checkout , (2) Docker Build and Push , and (3) ACI Deploy - refer to pipeline run for details!"}' https://hooks.slack.com/services/$(slack-api)
